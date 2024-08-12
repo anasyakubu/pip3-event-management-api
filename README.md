@@ -1,131 +1,101 @@
-```markdown
-# Recipe Management API
+# Event Management API
 
-## Overview
-
-This project is a RESTful API that allows users to manage recipes, including creating, reading, updating, and deleting recipes. The aim is to provide interns with hands-on experience in building a Node.js application with user authentication and database interaction.
+The Event Management API facilitates the creation, management, and participation in events. It provides a seamless experience for organizers and attendees, covering event creation, attendee registration, event information display, and feedback collection.
 
 ## Features
 
-- User Authentication (Sign Up, Sign In)
-- Create, Read, Update, and Delete (CRUD) recipes
-- Data validation and error handling
-- MongoDB integration for data storage
-- Timestamps for recipe creation and updates
+1. **Event Creation and Management**
 
-## Tech Stack
+   - Organizers can create, modify, and delete events.
+   - Events can include details such as title, description, date, time, location, and capacity.
 
-- Node.js
-- Express.js
-- MongoDB
-- Mongoose
-- JWT for authentication
+2. **Attendee Registration**
 
-## Getting Started
+   - Users can register for events.
+   - Validation ensures that events do not exceed their maximum capacity.
 
-### Prerequisites
+3. **Event Information Display**
 
-Ensure you have the following installed:
+   - Participants can view event details, including schedules and location information.
 
-- Node.js
-- MongoDB
+4. **Feedback and Rating**
+   - After the event, attendees can provide feedback and rate the event.
 
-### Installation
+## Technologies
+
+- **Node.js**: Server-side JavaScript runtime.
+- **Express.js**: Web framework for building the API.
+- **MongoDB**: NoSQL database for storing event and attendee data.
+- **Mongoose**: ODM for MongoDB to manage database schemas.
+- **JWT (JSON Web Tokens)**: For user authentication and securing endpoints.
+- **bcrypt**: For hashing user passwords.
+- **Nodemailer** (optional): For sending email notifications.
+
+## Installation
 
 1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/event-management-api.git
+   ```
+2. Navigate to the project directory:
+   ```bash
+   cd event-management-api
+   ```
+3. Install dependencies:
+   ```bash
+   npm install
+   ```
+4. Set up environment variables:
 
-```bash
-git clone https://github.com/anasyakubu/pip3-recipe-management-api.git
-cd recipe-management-api
-```
+   - Create a `.env` file in the root directory.
+   - Add the following variables:
+     ```
+     PORT=your_port
+     MONGO_URI=your_mongodb_uri
+     JWT_SECRET=your_jwt_secret
+     ```
 
-2. Install dependencies:
-
-```bash
-npm install
-```
-
-3. Create a `.env` file in the root directory and add your MongoDB connection string and JWT secret:
-
-```env
-MONGODB_URI=your_mongodb_uri
-JWT_SECRET=your_jwt_secret
-```
-
-4. Start the server:
-
-```bash
-npm start
-```
-
-The server should now be running on `http://localhost:9000`.
+5. Start the server:
+   ```bash
+   npm start
+   ```
 
 ## API Endpoints
 
 ### Authentication
 
-- **POST /auth/signup** - Register a new user
-- **POST /auth/login** - Authenticate a user and get a token
+- **POST /api/auth/register**: Register a new user.
+- **POST /api/auth/login**: Login and receive a JWT.
 
-### Recipes
+### Events
 
-- **GET /recipes** - Get all recipes
-- **GET /recipes/:id** - Get a specific recipe by ID
-- **POST /recipes** - Create a new recipe
-- **PUT /recipes/:id** - Update a recipe by ID
-- **DELETE /recipes/:id** - Delete a recipe by ID
+- **GET /api/events**: Retrieve a list of all events.
+- **GET /api/events/:id**: Retrieve details of a specific event.
+- **POST /api/events**: Create a new event (requires authentication).
+- **PUT /api/events/:id**: Update an existing event (requires authentication).
+- **DELETE /api/events/:id**: Delete an event (requires authentication).
 
-### Example Requests
+### Attendees
 
-#### Create a New Recipe
+- **POST /api/events/:id/register**: Register for an event (requires authentication).
 
-**POST /recipes**
+### Feedback
 
-```json
-{
-  "title": "Chocolate Cake",
-  "description": "A delicious chocolate cake recipe.",
-  "ingredients": ["2 cups flour", "1 cup sugar", "1 cup cocoa powder"],
-  "instructions": ["Mix ingredients", "Bake at 350 degrees for 30 minutes"],
-  "categories": ["Dessert"],
-  "tags": ["chocolate", "cake"],
-  "userID": "user_id_here"
-}
-```
+- **POST /api/events/:id/feedback**: Provide feedback and rate an event (requires authentication).
 
-#### Get All Recipes
+## Security
 
-**GET /recipes**
+- **JWT Authentication**: Secures endpoints by requiring valid tokens for protected routes.
+- **Password Hashing**: User passwords are hashed using `bcrypt` before being stored.
 
-```json
-[
-  {
-    "_id": "recipe_id_here",
-    "title": "Chocolate Cake",
-    "description": "A delicious chocolate cake recipe.",
-    "ingredients": ["2 cups flour", "1 cup sugar", "1 cup cocoa powder"],
-    "instructions": ["Mix ingredients", "Bake at 350 degrees for 30 minutes"],
-    "categories": ["Dessert"],
-    "tags": ["chocolate", "cake"],
-    "userID": "user_id_here",
-    "createdAt": "2024-08-06T00:00:00.000Z",
-    "updatedAt": "2024-08-06T00:00:00.000Z"
-  }
-]
-```
+## Optional Features
+
+- **Email Notifications**: Using Nodemailer, the API can send notifications to users about event updates or confirmations.
 
 ## Contributing
 
-1. Fork the repository
-2. Create a new feature branch (`git checkout -b feature-branch`)
-3. Commit your changes (`git commit -m 'Add some feature'`)
-4. Push to the branch (`git push origin feature-branch`)
-5. Open a Pull Request
+Contributions are welcome! Please fork the repository and submit a pull request for review.
 
 ## License
 
 This project is licensed under the MIT License.
-
-## Contact
-
-For any questions or concerns, please contact [yakubuanas04@gmail.com].
