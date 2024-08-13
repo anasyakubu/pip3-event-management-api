@@ -1,4 +1,4 @@
-const { mongoose } = require("mongoose");
+const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
 const eventSchema = new Schema(
@@ -9,18 +9,17 @@ const eventSchema = new Schema(
     time: { type: Date, required: true },
     location: { type: String, required: true },
     capacity: { type: Number, required: true },
-    organizer: { type: [String], required: true },
-    attendees: { type: [String], required: true },
-    feedback: { type: [String] },
+    organizer: { type: String, required: true },
+    attendees: [{ name: String, email: String }],
+    feedback: [String],
     userID: {
-      type: String,
+      type: Schema.Types.ObjectId,
       ref: "Users",
       required: true,
     },
   },
   { timestamps: true }
-); // This will automatically add createdAt and updatedAt fields
+);
 
 const EventModel = mongoose.model("Events", eventSchema);
-
 module.exports = EventModel;

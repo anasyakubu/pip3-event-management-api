@@ -1,21 +1,82 @@
-const Event = require("../models/event.modal");
+const Event = require("../models/event.model");
+const Attendees = require("../models/attendees.model");
 
-// List Event
+// List Events
 const eventList = (req, res) => {
   Event.find({})
-    .then((event) => res.status(200).json({ status: 200, data: event }))
-    .catch((err) => res.status(400).json(err));
+    .then((events) => res.status(200).json({ status: 200, data: events }))
+    .catch((err) => res.status(400).json({ status: 400, error: err.message }));
 };
 
 // Fetch Event [One]
 const getEvent = (req, res) => {
   const id = req.params.id;
-  Event.find({ _id: id })
+  Event.findById(id)
     .then((event) => res.status(200).json({ status: 200, data: event }))
-    .catch((err) => res.status(400).json(err));
+    .catch((err) => res.status(400).json({ status: 400, error: err.message }));
 };
 
-//Add Recipe
+// Register Event
+const registerEvent = async (req, res) => {
+  try {
+    const { name, email, registeredEvents } = req.body;
+
+    if (!name || !email || !registeredEvents || registeredEvents.length === 0) {
+      return res
+        .status(400)
+        .json({ status: 400, error: "All fields are required" });
+    }
+
+    const eventID = registeredEvents[0];
+    const event = await Event.findById(eventID);
+
+    if (!event) {
+      return res.status(404).json({ status: 404, error: "Event not found" });
+    }
+
+    const existingAttendee = await Event.findOne({
+      _id: eventID,
+      "attendees.email": email,
+    });
+    if (existingAttendee) {
+      return res
+        .status(400)
+        .json({
+          status: 400,
+          error: "You are already registered for this event",
+        });
+    }
+
+    if (event.attendees.length >= event.capacity) {
+      return res
+        .status(400)
+        .json({ status: 400, error: "Event capacity has been reached" });
+    }
+
+    event.attendees.push({ name, email });
+    await event.save();
+
+    const attendee = await Attendees.findOneAndUpdate(
+      { email },
+      { $addToSet: { registeredEvents: eventID } },
+      { new: true, upsert: true }
+    );
+
+    return res.status(200).json({
+      status: 200,
+      message: "Successfully registered for the event",
+      event,
+      attendee,
+    });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ status: 500, error: "Internal Server Error" });
+  }
+};
+
+// Add Event
 const addEvent = async (req, res) => {
   try {
     const {
@@ -26,58 +87,24 @@ const addEvent = async (req, res) => {
       location,
       capacity,
       organizer,
-      attendees,
-      feedback,
       userID,
     } = req.body;
 
-    // Check if all required fields are provided
-    if (!title) {
-      return res.status(400).json({ status: 400, error: "Title is required" });
-    }
-    if (!description) {
+    if (
+      !title ||
+      !description ||
+      !date ||
+      !time ||
+      !location ||
+      !capacity ||
+      !organizer ||
+      !userID
+    ) {
       return res
         .status(400)
-        .json({ status: 400, error: "Description is required" });
-    }
-    if (!date) {
-      return res.status(400).json({ status: 400, error: "Date is required" });
-    }
-    if (!instructions) {
-      return time.status(400).json({ status: 400, error: "Time are required" });
-    }
-    if (!location) {
-      return res
-        .status(400)
-        .json({ status: 400, error: "Location are required" });
-    }
-    if (!capacity) {
-      return res
-        .status(400)
-        .json({ status: 400, error: "Capacity are required" });
-    }
-    if (!organizer) {
-      return res
-        .status(400)
-        .json({ status: 400, error: "Oganizer are required" });
-    }
-    if (!attendees) {
-      return res
-        .status(400)
-        .json({ status: 400, error: "Attendees are required" });
-    }
-    // if (!feedback) {
-    //   return res
-    //     .status(400)
-    //     .json({ status: 400, error: "feedback are required" });
-    // }
-    if (!userID) {
-      return res
-        .status(400)
-        .json({ status: 400, error: "User ID is required" });
+        .json({ status: 400, error: "All fields are required" });
     }
 
-    // Check if the Event already exists
     const existingEvent = await Event.findOne({ title });
     if (existingEvent) {
       return res
@@ -85,7 +112,6 @@ const addEvent = async (req, res) => {
         .json({ status: 400, error: "Event already exists" });
     }
 
-    // Create a new recipe in the database
     const event = await Event.create({
       title,
       description,
@@ -94,13 +120,12 @@ const addEvent = async (req, res) => {
       location,
       capacity,
       organizer,
-      attendees,
-      feedback: "No feedback Yet",
+      feedback: [],
+      attendees: [],
       userID,
     });
 
-    // Return the newly created event
-    return res.status(201).json(event);
+    return res.status(201).json({ status: 201, data: event });
   } catch (error) {
     console.error(error);
     return res
@@ -109,7 +134,7 @@ const addEvent = async (req, res) => {
   }
 };
 
-// update Event
+// Update Event
 const updateEvent = async (req, res) => {
   const id = req.params.id;
   try {
@@ -125,55 +150,24 @@ const updateEvent = async (req, res) => {
       feedback,
       userID,
     } = req.body;
-    // check if details was entered
-    // Check if all required fields are provided
-    if (!title) {
-      return res.status(400).json({ status: 400, error: "Title is required" });
-    }
-    if (!description) {
+
+    if (
+      !title ||
+      !description ||
+      !date ||
+      !time ||
+      !location ||
+      !capacity ||
+      !organizer ||
+      !userID
+    ) {
       return res
         .status(400)
-        .json({ status: 400, error: "Description is required" });
-    }
-    if (!date) {
-      return res.status(400).json({ status: 400, error: "Date is required" });
-    }
-    if (!instructions) {
-      return time.status(400).json({ status: 400, error: "Time are required" });
-    }
-    if (!location) {
-      return res
-        .status(400)
-        .json({ status: 400, error: "Location are required" });
-    }
-    if (!capacity) {
-      return res
-        .status(400)
-        .json({ status: 400, error: "Capacity are required" });
-    }
-    if (!organizer) {
-      return res
-        .status(400)
-        .json({ status: 400, error: "Oganizer are required" });
-    }
-    if (!attendees) {
-      return res
-        .status(400)
-        .json({ status: 400, error: "Attendees are required" });
-    }
-    // if (!feedback) {
-    //   return res
-    //     .status(400)
-    //     .json({ status: 400, error: "feedback are required" });
-    // }
-    if (!userID) {
-      return res
-        .status(400)
-        .json({ status: 400, error: "User ID is required" });
+        .json({ status: 400, error: "All fields are required" });
     }
 
-    const update = await Event.findByIdAndUpdate(
-      { _id: id },
+    const event = await Event.findByIdAndUpdate(
+      id,
       {
         title,
         description,
@@ -185,27 +179,38 @@ const updateEvent = async (req, res) => {
         attendees,
         feedback,
         userID,
-      }
-    )
-      .then((update) => res.status(200).json(update))
-      .catch((err) => console.log(err));
+      },
+      { new: true }
+    );
+
+    if (!event) {
+      return res.status(404).json({ status: 404, error: "Event not found" });
+    }
+
+    return res.status(200).json({ status: 200, data: event });
   } catch (error) {
-    console.log(error);
+    console.error(error);
+    return res
+      .status(500)
+      .json({ status: 500, error: "Internal Server Error" });
   }
 };
 
-// delete Event
+// Delete Event
 const deleteEvent = (req, res) => {
   const id = req.params.id;
-  Event.findByIdAndDelete({ _id: id })
-    .then((deleteData) => res.status(200).json(deleteData))
-    .catch((err) => console.log(err));
+  Event.findByIdAndDelete(id)
+    .then((deletedEvent) =>
+      res.status(200).json({ status: 200, data: deletedEvent })
+    )
+    .catch((err) => res.status(400).json({ status: 400, error: err.message }));
 };
 
 module.exports = {
   addEvent,
   eventList,
   getEvent,
+  registerEvent,
   updateEvent,
   deleteEvent,
 };
