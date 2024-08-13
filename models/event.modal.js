@@ -11,7 +11,7 @@ const eventSchema = new Schema(
     capacity: { type: Number, required: true },
     organizer: { type: [String], required: true },
     attendees: { type: [String], required: true },
-    feedback: { type: [String], required: true },
+    feedback: { type: [String] },
     userID: {
       type: String,
       ref: "Users",
