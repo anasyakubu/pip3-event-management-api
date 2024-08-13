@@ -10,7 +10,7 @@ const app = express();
 // database connection
 mongoose
   .connect(process.env.MONGODB_URL, {
-    dbName: "recipe-management",
+    dbName: "event-management-db",
     // bufferCommands: false,
     // connectTimeoutMS: 30000,
   })
@@ -33,8 +33,8 @@ const corsOptions = {
 app.use(cors(corsOptions));
 // auth
 app.use("/", require("./routes/auth.routes"));
-// recipe
-app.use("/", require("./routes/recipe.routes"));
+// event
+app.use("/", require("./routes/event.routes"));
 
 const PORT = 9000;
 app.listen(PORT, () => console.log(`Server is starting on port ${PORT}`));
