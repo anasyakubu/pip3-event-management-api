@@ -1,14 +1,15 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
-const attendeesSchema = new Schema(
+const attendeeSchema = new Schema(
   {
     name: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
-    registeredEvents: [{ type: Schema.Types.ObjectId, ref: "Events" }],
+    email: { type: String, required: true },
+    registeredEvents: { type: [Schema.Types.ObjectId], ref: "Event" },
   },
   { timestamps: true }
 );
 
-const AttendeesModel = mongoose.model("Attendees", attendeesSchema);
-module.exports = AttendeesModel;
+const Attendee = mongoose.model("Attendee", attendeeSchema);
+
+module.exports = Attendee;
