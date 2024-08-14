@@ -1,26 +1,32 @@
 const Event = require("../models/event.model");
-const Attendees = require("../models/attendees.model");
+const Attendee = require("../models/attendee.model");
 
-// List Events
+// List all events
 const eventList = (req, res) => {
   Event.find({})
     .then((events) => res.status(200).json({ status: 200, data: events }))
-    .catch((err) => res.status(400).json({ status: 400, error: err.message }));
+    .catch((err) => res.status(400).json(err));
 };
 
-// Fetch Event [One]
+// Fetch details of a single event
 const getEvent = (req, res) => {
   const id = req.params.id;
   Event.findById(id)
-    .then((event) => res.status(200).json({ status: 200, data: event }))
-    .catch((err) => res.status(400).json({ status: 400, error: err.message }));
+    .then((event) => {
+      if (!event) {
+        return res.status(404).json({ status: 404, error: "Event not found" });
+      }
+      res.status(200).json({ status: 200, data: event });
+    })
+    .catch((err) => res.status(400).json(err));
 };
 
-// Register Event
+// Register an attendee for an event
 const registerEvent = async (req, res) => {
   try {
     const { name, email, registeredEvents } = req.body;
 
+    // Check if all required fields are provided
     if (!name || !email || !registeredEvents || registeredEvents.length === 0) {
       return res
         .status(400)
@@ -28,45 +34,48 @@ const registerEvent = async (req, res) => {
     }
 
     const eventID = registeredEvents[0];
-    const event = await Event.findById(eventID);
 
+    // Find the event by ID
+    const event = await Event.findById(eventID);
     if (!event) {
       return res.status(404).json({ status: 404, error: "Event not found" });
     }
 
-    const existingAttendee = await Event.findOne({
-      _id: eventID,
-      "attendees.email": email,
+    // Check if the email is already registered for this event
+    const existingAttendee = await Attendee.findOne({
+      email,
+      registeredEvents: eventID,
     });
     if (existingAttendee) {
-      return res
-        .status(400)
-        .json({
-          status: 400,
-          error: "You are already registered for this event",
-        });
+      return res.status(400).json({
+        status: 400,
+        error: "You are already registered for this event",
+      });
     }
 
+    // Check if the event has remaining capacity
     if (event.attendees.length >= event.capacity) {
       return res
         .status(400)
         .json({ status: 400, error: "Event capacity has been reached" });
     }
 
-    event.attendees.push({ name, email });
-    await event.save();
-
-    const attendee = await Attendees.findOneAndUpdate(
+    // Register the attendee
+    const newAttendee = await Attendee.findOneAndUpdate(
       { email },
-      { $addToSet: { registeredEvents: eventID } },
+      { $addToSet: { registeredEvents: eventID }, name },
       { new: true, upsert: true }
     );
+
+    // Add the attendee to the event
+    event.attendees.push({ name, email });
+    await event.save();
 
     return res.status(200).json({
       status: 200,
       message: "Successfully registered for the event",
       event,
-      attendee,
+      attendee: newAttendee,
     });
   } catch (error) {
     console.error(error);
@@ -76,7 +85,7 @@ const registerEvent = async (req, res) => {
   }
 };
 
-// Add Event
+// Create a new event
 const addEvent = async (req, res) => {
   try {
     const {
@@ -90,6 +99,7 @@ const addEvent = async (req, res) => {
       userID,
     } = req.body;
 
+    // Validate required fields
     if (
       !title ||
       !description ||
@@ -105,6 +115,7 @@ const addEvent = async (req, res) => {
         .json({ status: 400, error: "All fields are required" });
     }
 
+    // Check if the event already exists
     const existingEvent = await Event.findOne({ title });
     if (existingEvent) {
       return res
@@ -112,6 +123,7 @@ const addEvent = async (req, res) => {
         .json({ status: 400, error: "Event already exists" });
     }
 
+    // Create and save the event
     const event = await Event.create({
       title,
       description,
@@ -120,12 +132,12 @@ const addEvent = async (req, res) => {
       location,
       capacity,
       organizer,
-      feedback: [],
       attendees: [],
+      feedback: [],
       userID,
     });
 
-    return res.status(201).json({ status: 201, data: event });
+    return res.status(201).json(event);
   } catch (error) {
     console.error(error);
     return res
@@ -134,7 +146,7 @@ const addEvent = async (req, res) => {
   }
 };
 
-// Update Event
+// Update an event
 const updateEvent = async (req, res) => {
   const id = req.params.id;
   try {
@@ -151,6 +163,7 @@ const updateEvent = async (req, res) => {
       userID,
     } = req.body;
 
+    // Validate required fields
     if (
       !title ||
       !description ||
@@ -187,7 +200,7 @@ const updateEvent = async (req, res) => {
       return res.status(404).json({ status: 404, error: "Event not found" });
     }
 
-    return res.status(200).json({ status: 200, data: event });
+    res.status(200).json(event);
   } catch (error) {
     console.error(error);
     return res
@@ -196,14 +209,19 @@ const updateEvent = async (req, res) => {
   }
 };
 
-// Delete Event
+// Delete an event
 const deleteEvent = (req, res) => {
   const id = req.params.id;
   Event.findByIdAndDelete(id)
-    .then((deletedEvent) =>
-      res.status(200).json({ status: 200, data: deletedEvent })
-    )
-    .catch((err) => res.status(400).json({ status: 400, error: err.message }));
+    .then((deletedEvent) => {
+      if (!deletedEvent) {
+        return res.status(404).json({ status: 404, error: "Event not found" });
+      }
+      res.status(200).json(deletedEvent);
+    })
+    .catch((err) =>
+      res.status(500).json({ status: 500, error: "Internal Server Error" })
+    );
 };
 
 module.exports = {

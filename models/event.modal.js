@@ -9,17 +9,29 @@ const eventSchema = new Schema(
     time: { type: Date, required: true },
     location: { type: String, required: true },
     capacity: { type: Number, required: true },
-    organizer: { type: String, required: true },
-    attendees: [{ name: String, email: String }],
-    feedback: [String],
+    organizer: { type: String, ref: "User", required: true },
+    attendees: [
+      {
+        name: String,
+        email: String,
+      },
+    ],
+    feedback: [
+      {
+        userID: { type: String, ref: "User" },
+        comment: String,
+        rating: Number,
+      },
+    ],
     userID: {
-      type: Schema.Types.ObjectId,
-      ref: "Users",
+      type: String,
+      ref: "User",
       required: true,
     },
   },
   { timestamps: true }
 );
 
-const EventModel = mongoose.model("Events", eventSchema);
-module.exports = EventModel;
+const Event = mongoose.model("Event", eventSchema);
+
+module.exports = Event;
