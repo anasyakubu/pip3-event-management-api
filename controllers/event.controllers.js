@@ -1,5 +1,5 @@
-const Event = require("../models/event.model");
-const Attendee = require("../models/attendee.model");
+const Event = require("../models/event.modal");
+const Attendee = require("../models/attendees.model");
 
 // List all events
 const eventList = (req, res) => {
